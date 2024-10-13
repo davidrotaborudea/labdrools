@@ -1,0 +1,117 @@
+import com.davidrotabor.reglas.model.Participant;
+global com.davidrotabor.reglas.model.Rate rate;
+dialect "mvel"
+rule "Checking Existing Debt Against Lean amount"
+    when
+        Participant(loanAmount > (2 * existingDebt))
+    then
+        rate.setLoanStatus("Rejected - Too Much Debt");
+        rate.setLoanRate(999);
+    end
+rule "Checking Annual Salary is greater than 50000"
+    when
+        Participant(annualSalary <= 50000)
+    then
+        rate.setLoanStatus("Rejected - Too low salary");
+        rate.setLoanRate(999);
+    end
+rule "Checking Credit Score less than 550"
+    when
+        Participant(creditScore< 550 , annualSalary > 50000 , loanAmount < (2 * existingDebt))
+    then
+        rate.setLoanStatus("Rejected");
+        rate.setLoanRate(999);
+    end
+rule "Checking Credit Score less than 650"
+    when
+        Participant(creditScore< 650 && creditScore >=550 , annualSalary > 50000 , loanAmount < (2 * existingDebt))
+    then
+        rate.setLoanStatus("Approved");
+        rate.setLoanRate(7.25);
+    end
+rule "Checking Credit Score less than 750"
+    when
+        Participant(creditScore< 750 && creditScore >=650 , annualSalary > 50000 , loanAmount < (2 * existingDebt))
+    then
+        rate.setLoanStatus("Approved");
+        rate.setLoanRate(6.25);
+    end
+rule "Checking Credit Score greater than 750"
+    when
+        Participant(creditScore >= 750 , annualSalary > 50000 , loanAmount < (2 * existingDebt))
+    then
+        rate.setLoanStatus("Approved");
+        rate.setLoanRate(5.25);
+    end
+rule "Reject if more than 3 children and low annual salary"
+    when
+        Participant(children > 3 && annualSalary < 60000)
+    then
+        rate.setLoanStatus("Rejected - Too many dependents and low salary");
+        rate.setLoanRate(999);
+    end
+rule "Reject for low socioeconomic status, more than 2 children and high debt-to-salary ratio"
+    when
+        Participant(socioEconomicStatus == 1 || socioEconomicStatus == 2 && children > 2 && existingDebt > (0.3 * annualSalary))
+    then
+        rate.setLoanStatus("Rejected - Low status, many children, and high debt");
+        rate.setLoanRate(999);
+    end
+rule "Approve with preferential rate for high salary, high credit score and indefinite contract"
+    when
+        Participant(annualSalary > 100000 && creditScore > 700 && contractType == "Indefinite")
+    then
+        rate.setLoanStatus("Approved - Preferential Rate");
+        rate.setLoanRate(3.5);
+        rate.setCreditCardOffered(true);
+    end
+rule "Reject for short-term contract, many children, and high debt"
+    when
+        Participant(contractType == "Fixed" && contractDuration < 6 && children > 3 && existingDebt > (0.4 * annualSalary))
+    then
+        rate.setLoanStatus("Rejected - Unstable job, many dependents, and high debt");
+        rate.setLoanRate(999);
+    end
+rule "Approve for indefinite contract, high socioeconomic status, no debt, and more than 2 children"
+    when
+        Participant(contractType == "Indefinite" && socioEconomicStatus >= 5 && existingDebt == 0 && children > 2)
+    then
+        rate.setLoanStatus("Approved - Family-friendly Rate");
+        rate.setLoanRate(4.0);
+    end
+rule "Reject for low credit score, fixed-term contract, and high debt-to-salary ratio"
+    when
+        Participant(creditScore < 600 && contractType == "Fixed" && existingDebt > (0.5 * annualSalary))
+    then
+        rate.setLoanStatus("Rejected - Poor credit and high debt");
+        rate.setLoanRate(999);
+    end
+rule "Approve with reduced rate for indefinite contract, mid socioeconomic status, and low debt"
+    when
+        Participant(contractType == "Indefinite" && socioEconomicStatus >= 3 && socioEconomicStatus <= 4 && existingDebt < (0.2 * annualSalary))
+    then
+        rate.setLoanStatus("Approved - Reduced Rate");
+        rate.setLoanRate(4.5);
+    end
+rule "Approve for low socioeconomic status, good credit score, and manageable debt"
+    when
+        Participant(socioEconomicStatus == 1 || socioEconomicStatus == 2 && creditScore > 650 && existingDebt < (0.3 * annualSalary))
+    then
+        rate.setLoanStatus("Approved - Special Support Program");
+        rate.setLoanRate(5.0);
+    end
+rule "Reject for large family, low socioeconomic status, and low salary"
+    when
+        Participant(children > 4 && socioEconomicStatus <= 2 && annualSalary < 40000)
+    then
+        rate.setLoanStatus("Rejected - Financial Instability");
+        rate.setLoanRate(999);
+    end
+rule "Offer special loan for large family, indefinite contract, and no debt"
+    when
+        Participant(children > 2 && contractType == "Indefinite" && existingDebt == 0)
+    then
+        rate.setLoanStatus("Approved - Special Family Loan");
+        rate.setLoanRate(3.75);
+        rate.setCreditCardOffered(true);
+    end
